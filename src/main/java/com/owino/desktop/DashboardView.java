@@ -23,19 +23,19 @@ public class DashboardView extends SplitPane {
         initView(stage);
     }
     private void initView(Stage stage) {
-        getItems().add(new MainMenuView(stage));
-        getItems().add(new WelcomeView());
+        getItems().add(new MainMenuView());
+        getItems().add(new WelcomeView(stage));
         addEventHandler(AppEvents.OPEN_MODULE_FORM_EVENT, _ -> {
             getItems().removeFirst();
             getItems().removeLast();
-            getItems().add(new MainMenuView(stage));
+            getItems().add(new MainMenuView());
             getItems().add(new VerificationFormView());
         });
         addEventHandler(AppEvents.CLOSE_MODULE_FORM_EVENT, _ -> {
             getItems().removeFirst();
             getItems().removeLast();
-            getItems().add(new MainMenuView(stage));
-            getItems().add(new WelcomeView());
+            getItems().add(new MainMenuView());
+            getItems().add(new WelcomeView(stage));
         });
         setOrientation(Orientation.HORIZONTAL);
         setDividerPositions(0.1f);

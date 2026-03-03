@@ -83,6 +83,12 @@ See <https://www.gnu.org/licenses/> for more details.
       <artifactId>javafx-fxml</artifactId>
       <version>${javafx.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.xerial</groupId>
+      <artifactId>sqlite-jdbc</artifactId>
+      <version>3.51.2.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <finalName>osqa</finalName>

@@ -20,4 +20,5 @@ buildNumber.properties
 .DS_Store
 *.tmp
 data/
-## README.md.bak
+settings_db
+README.md.bak

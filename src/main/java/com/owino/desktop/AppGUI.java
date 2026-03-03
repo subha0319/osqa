@@ -21,11 +21,13 @@ import javafx.stage.Stage;
 public class AppGUI extends Application {
     @Override
     public void start(Stage stage) {
-        stage.setScene(new Scene(new DashboardView(stage)));
+        var dashboard = new DashboardView(stage);
+        var scene = new Scene(dashboard);
+        stage.setScene(scene);
         stage.setMinHeight(800);
         stage.setMinWidth(1000);
         stage.setTitle("OSQA");
-        stage.setOnShown(e -> IO.println("onAppear..."));
+        stage.setOnShown(_ -> IO.println("onAppear..."));
         stage.show();
     }
 }
