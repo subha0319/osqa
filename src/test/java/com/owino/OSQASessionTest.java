@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import java.util.List;
 import java.util.Scanner;
 import org.mockito.junit.jupiter.MockitoExtension;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import com.owino.core.OSQAModel.OSQAOutcome;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQAVerification;
@@ -38,17 +38,17 @@ public class OSQASessionTest {
     @Mock
     private Scanner scanner;
     @Test
-    public void shouldAllowModuleSelectionTest(){
+    public void shouldAllowFeatureSelectionTest(){
         when(scanner.nextInt()).thenReturn(1);
-        Result<OSQAModule> selectionResult = session.moduleSelection(TestData.moduleOptions);
-        assertThat(selectionResult instanceof Result.Success<OSQAModule>).isTrue();
-        var selectedModule = ((Result.Success<OSQAModule>) selectionResult).value();
-        assertThat(selectedModule).isNotNull();
-        assertThat(selectedModule.uuid()).isEqualTo(TestData.firstIndexModule.uuid());
-        assertThat(selectedModule.name()).isEqualTo(TestData.firstIndexModule.name());
-        assertThat(selectedModule.description()).isEqualTo(TestData.firstIndexModule.description());
-        assertThat(selectedModule.priority()).isEqualTo(TestData.firstIndexModule.priority());
-        assertThat(selectedModule.testCases().size()).isEqualTo(TestData.firstIndexModule.testCases().size());
+        Result<OSQAFeature> selectionResult = session.featureSelection(TestData.featureOptions);
+        assertThat(selectionResult instanceof Result.Success<OSQAFeature>).isTrue();
+        var selectedFeature = ((Result.Success<OSQAFeature>) selectionResult).value();
+        assertThat(selectedFeature).isNotNull();
+        assertThat(selectedFeature.uuid()).isEqualTo(TestData.firstIndexFeature.uuid());
+        assertThat(selectedFeature.name()).isEqualTo(TestData.firstIndexFeature.name());
+        assertThat(selectedFeature.description()).isEqualTo(TestData.firstIndexFeature.description());
+        assertThat(selectedFeature.priority()).isEqualTo(TestData.firstIndexFeature.priority());
+        assertThat(selectedFeature.testCases().size()).isEqualTo(TestData.firstIndexFeature.testCases().size());
     }
     @Test
     public void shouldRenderSpecForIndividualCaseTest(){

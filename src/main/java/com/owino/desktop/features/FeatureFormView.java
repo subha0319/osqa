@@ -34,7 +34,7 @@ import com.owino.settings.SettingDao;
 import javafx.scene.layout.BorderPane;
 import com.owino.desktop.OSQANavigationEvents;
 import org.greenrobot.eventbus.EventBus;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import tools.jackson.databind.ObjectMapper;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQATestCase;
@@ -47,14 +47,14 @@ public class FeatureFormView extends ScrollPane {
     private static final Font FORM_LABEL_FONT = Font.font(17);
     private final VBox verificationListContainer = new VBox();
     private TextArea userActionField;
-    private TextField moduleTitleTextField;
+    private TextField featureTitleTextField;
     private List<OSQAVerification> verifications = new ArrayList<>();
     public FeatureFormView(){
-        var moduleForm = initModuleForm();
-        setContent(moduleForm);
+        var featureForm = initFeatureForm();
+        setContent(featureForm);
         setFitToWidth(true);
     }
-    private VBox initModuleForm() {
+    private VBox initFeatureForm() {
         var formContainer = new VBox();
         var header = new BorderPane();
         var titleText = new Text("New Feature");
@@ -66,27 +66,27 @@ public class FeatureFormView extends ScrollPane {
         header.setRight(actionButtonsContainer);
         var saveButton = new Button("Save");
         cancelButton.setOnAction(_ -> EventBus.getDefault().post(new OSQANavigationEvents.OpenDashboardEvent()));
-        var moduleDetailsContainer = new VBox();
-        var moduleTitleText = new Text("Name");
-        moduleTitleTextField = new TextField();
+        var featureDetailsContainer = new VBox();
+        var featureTitleText = new Text("Name");
+        featureTitleTextField = new TextField();
         var descriptionText = new Text("Description");
         var descriptionTextField = new TextField();
-        moduleTitleText.setFont(FORM_LABEL_FONT);
+        featureTitleText.setFont(FORM_LABEL_FONT);
         descriptionText.setFont(FORM_LABEL_FONT);
-        moduleDetailsContainer.getChildren().add(moduleTitleText);
-        moduleDetailsContainer.getChildren().add(moduleTitleTextField);
-        moduleDetailsContainer.getChildren().add(descriptionText);
-        moduleDetailsContainer.getChildren().add(descriptionTextField);
-        moduleDetailsContainer.getChildren().add(new Separator());
-        moduleDetailsContainer.setStyle(CSS.FORM_SECTION_BORDER);
-        VBox.setMargin(moduleTitleText,LABEL_MARGIN);
-        VBox.setMargin(moduleTitleTextField,FIELD_MARGIN);
+        featureDetailsContainer.getChildren().add(featureTitleText);
+        featureDetailsContainer.getChildren().add(featureTitleTextField);
+        featureDetailsContainer.getChildren().add(descriptionText);
+        featureDetailsContainer.getChildren().add(descriptionTextField);
+        featureDetailsContainer.getChildren().add(new Separator());
+        featureDetailsContainer.setStyle(CSS.FORM_SECTION_BORDER);
+        VBox.setMargin(featureTitleText,LABEL_MARGIN);
+        VBox.setMargin(featureTitleTextField,FIELD_MARGIN);
         VBox.setMargin(descriptionText,LABEL_MARGIN);
         VBox.setMargin(descriptionTextField,FIELD_MARGIN);
         formContainer.getChildren().add(header);
-        formContainer.getChildren().add(moduleDetailsContainer);
+        formContainer.getChildren().add(featureDetailsContainer);
         VBox.setMargin(header,MARGIN);
-        VBox.setMargin(moduleDetailsContainer,MARGIN);
+        VBox.setMargin(featureDetailsContainer,MARGIN);
         actionButtonsContainer.getChildren().add(saveButton);
         VBox.setMargin(saveButton,MARGIN);
         addTestCaseForm(formContainer);
@@ -107,16 +107,16 @@ public class FeatureFormView extends ScrollPane {
                 var specification = new OSQATestSpec(UUID.randomUUID().toString(),userActionField.getText(),verifications);
                 OSQAConfig.writeSpecFile(appDir,specification,specFile);
                 testCases.add(testCase);
-                var moduleTitle = moduleTitleTextField.getText();
-                var moduleDescription = descriptionTextField.getText();
-                var module = new OSQAModule(
+                var featureTitle = featureTitleTextField.getText();
+                var featureDescription = descriptionTextField.getText();
+                var feature = new OSQAFeature(
                         UUID.randomUUID().toString(),
-                        moduleTitle,
-                        moduleDescription,
+                        featureTitle,
+                        featureDescription,
                         "Critical",
                         testCases);
-                OSQAConfig.writeModule(appDir,module);
-                IO.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(module));
+                OSQAConfig.writeFeature(appDir,feature);
+                IO.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(feature));
                 Alert successAlert = new Alert(Alert.AlertType.NONE);
                 successAlert.setTitle("Success!");
                 successAlert.setContentText("Feature created successfully!");

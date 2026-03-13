@@ -19,7 +19,7 @@ import com.owino.core.OSQAGenerator;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQAVerification;
 import com.owino.core.OSQAModel.OSQATestCase;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,17 +38,17 @@ public class OSQAGeneratorTest {
     private final String CONTINUE_FALG = "y";
     private final String BREAK_FLAG = "n";
     @Test
-    public void shouldCollectModulesListTest(){
+    public void shouldCollectFeaturesListTest(){
         var testCaseTitle = "Test Case 001";
-        var moduleName = "Test Module";
-        var description = "This is a test module";
+        var featureName = "Test Feature";
+        var description = "This is a test feature";
         when(scanner.nextLine())
-                .thenReturn(moduleName)
+                .thenReturn(featureName)
                 .thenReturn(description)
                 .thenReturn(testCaseTitle)
                 .thenReturn(BREAK_FLAG)
                 .thenReturn(CONTINUE_FALG)
-                .thenReturn(moduleName)
+                .thenReturn(featureName)
                 .thenReturn(description)
                 .thenReturn(testCaseTitle)
                 .thenReturn(BREAK_FLAG)
@@ -56,17 +56,17 @@ public class OSQAGeneratorTest {
         when(scanner.nextInt())
                 .thenReturn(2)
                 .thenReturn(1);
-        List<OSQAModule> modules = generator.collectModules();
-        assertThat(modules).isNotEmpty();
-        assertThat(modules.size()).isEqualTo(2);
-        assertThat(modules.getFirst().name()).isEqualTo(moduleName);
+        List<OSQAFeature> features = generator.collectFeatures();
+        assertThat(features).isNotEmpty();
+        assertThat(features.size()).isEqualTo(2);
+        assertThat(features.getFirst().name()).isEqualTo(featureName);
     }
     @Test
-    public void shouldCollectModuleTestCasesTest(){
+    public void shouldCollectFeatureTestCasesTest(){
         var testCaseTitle = "Test Case 001";
         var testCaseTitle2 = "Test Case 002";
         var testCaseTitle3 = "Test Case 003";
-        var moduleTitle = "Test Module 001";
+        var featureTitle = "Test Feature 001";
         when(scanner.nextLine())
                 .thenReturn(testCaseTitle)
                 .thenReturn(CONTINUE_FALG)
@@ -74,7 +74,7 @@ public class OSQAGeneratorTest {
                 .thenReturn(CONTINUE_FALG)
                 .thenReturn(testCaseTitle3)
                 .thenReturn(BREAK_FLAG);
-        List<OSQATestCase> testCases = generator.collectTestCases(moduleTitle);
+        List<OSQATestCase> testCases = generator.collectTestCases(featureTitle);
         assertThat(testCases).isNotEmpty();
         assertThat(testCases.size()).isEqualTo(3);
         assertThat(testCases.getFirst()).isNotNull();

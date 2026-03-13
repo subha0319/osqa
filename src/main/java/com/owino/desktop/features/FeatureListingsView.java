@@ -29,7 +29,7 @@ import com.owino.settings.SettingDao;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import com.owino.desktop.OSQANavigationEvents;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 public class FeatureListingsView extends VBox {
     public FeatureListingsView(){
         var appDirResult = SettingDao.getAppDataDir();
@@ -41,47 +41,47 @@ public class FeatureListingsView extends VBox {
             }
         };
         if (featuresDir.isPresent()) {
-            List<OSQAModule> modules = switch (OSQAConfig.listModules(featuresDir.get())){
-                case Result.Success<List<OSQAModule>> (List<OSQAModule> modulesValue) -> modulesValue;
-                case Result.Failure<List<OSQAModule>> failure -> {
-                    IO.println("Failed to load module list:" + failure.error().getLocalizedMessage());
+            List<OSQAFeature> features = switch (OSQAConfig.listFeatures(featuresDir.get())){
+                case Result.Success<List<OSQAFeature>> (List<OSQAFeature> featuresValue) -> featuresValue;
+                case Result.Failure<List<OSQAFeature>> failure -> {
+                    IO.println("Failed to load feature list:" + failure.error().getLocalizedMessage());
                     yield List.of();
                 }
             };
-            if (!modules.isEmpty()){
-                ObservableList<OSQAModule> listViewContents = FXCollections.observableList(modules);
-                var listView = new ListView<OSQAModule>(listViewContents);
+            if (!features.isEmpty()){
+                ObservableList<OSQAFeature> listViewContents = FXCollections.observableList(features);
+                var listView = new ListView<OSQAFeature>(listViewContents);
                 listView.setCellFactory(item -> new ListCell<>(){
                     @Override
-                    protected void updateItem(OSQAModule module, boolean empty) {
-                        super.updateItem(module, empty);
-                        if (empty || module == null){
+                    protected void updateItem(OSQAFeature feature, boolean empty) {
+                        super.updateItem(feature, empty);
+                        if (empty || feature == null){
                             setText("");
                             setGraphic(null);
                         } else {
-                            var moduleItemContainer = new VBox(10);
-                            var nameLabel = new Label(module.name());
-                            var descriptionLabel = new Label(module.description());
+                            var featureItemContainer = new VBox(10);
+                            var nameLabel = new Label(feature.name());
+                            var descriptionLabel = new Label(feature.description());
                             descriptionLabel.setMaxWidth(700);
                             descriptionLabel.setWrapText(true);
-                            moduleItemContainer.getChildren().addAll(nameLabel, descriptionLabel, new Separator());
+                            featureItemContainer.getChildren().addAll(nameLabel, descriptionLabel, new Separator());
                             VBox.setMargin(nameLabel,new Insets(12,12,3,12));
                             VBox.setMargin(descriptionLabel,new Insets(3,12,6,12));
                             var blueBackground = new Background(new BackgroundFill(Color.BLUE,new CornerRadii(12),Insets.EMPTY));
                             var blackBackground = new Background(new BackgroundFill(Color.BLACK,new CornerRadii(12),Insets.EMPTY));
-                            moduleItemContainer.setOnMouseEntered(_ -> moduleItemContainer.setBackground(blueBackground));
-                            moduleItemContainer.setOnMouseExited(_ -> moduleItemContainer.setBackground(blackBackground));
-                            setGraphic(moduleItemContainer);
+                            featureItemContainer.setOnMouseEntered(_ -> featureItemContainer.setBackground(blueBackground));
+                            featureItemContainer.setOnMouseExited(_ -> featureItemContainer.setBackground(blackBackground));
+                            setGraphic(featureItemContainer);
                         }
                     }
                 });
                 listView.setBorder(Border.EMPTY);
-                var moduleSelectionModel = listView.getSelectionModel();
-                moduleSelectionModel.setSelectionMode(SelectionMode.SINGLE);
-                var moduleSelectedItemProp = moduleSelectionModel.selectedItemProperty();
-                moduleSelectedItemProp.addListener((_, _,selectedModule) -> {
-                    if (selectedModule != null){
-                        EventBus.getDefault().post(new OSQANavigationEvents.OpenFeatureDetailedViewEvent(selectedModule));
+                var featureSelectionModel = listView.getSelectionModel();
+                featureSelectionModel.setSelectionMode(SelectionMode.SINGLE);
+                var featureSelectedItemProp = featureSelectionModel.selectedItemProperty();
+                featureSelectedItemProp.addListener((_, _,selectedFeature) -> {
+                    if (selectedFeature != null){
+                        EventBus.getDefault().post(new OSQANavigationEvents.OpenFeatureDetailedViewEvent(selectedFeature));
                     }
                 });
                 var listViewContainer = new VBox(listView);

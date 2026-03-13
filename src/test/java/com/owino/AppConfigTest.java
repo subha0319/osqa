@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import com.owino.core.OSQAModel.OSQATestCase;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQAVerification;
@@ -37,12 +37,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class AppConfigTest {
     private final String TEST_CASE_SPEC_FILE = "data/test-001-spec.json";
-    private Path modulesFile;
+    private Path featuresFile;
     private Path testSpecFile;
     @BeforeEach
     public void setUp() throws IOException {
         deleteAppDataFolder();
-        prepareModuleFile();
+        prepareFeatureFile();
         var filePath = Paths.get(TEST_CASE_SPEC_FILE);
         testSpecFile = Files.createFile(filePath);
         assertThat(testSpecFile).isNotNull();
@@ -52,38 +52,38 @@ public class AppConfigTest {
             assertThat(stream.count()).isGreaterThan(0);
         }
     }
-    private void prepareModuleFile() throws IOException {
+    private void prepareFeatureFile() throws IOException {
         var filePath = Paths.get(OSQAConfig.MODULE_FILE);
         Files.createDirectory(Paths.get("data"));
-        modulesFile = Files.createFile(filePath);
-        assertThat(modulesFile).isNotNull();
-        assertThat(Files.exists(modulesFile)).isTrue();
-        Files.write(modulesFile, List.of(modulesJson.split("\n")));
-        try (var stream = Files.lines(modulesFile)) {
+        featuresFile = Files.createFile(filePath);
+        assertThat(featuresFile).isNotNull();
+        assertThat(Files.exists(featuresFile)).isTrue();
+        Files.write(featuresFile, List.of(featuresJson.split("\n")));
+        try (var stream = Files.lines(featuresFile)) {
             assertThat(stream.count()).isGreaterThan(0);
         }
     }
     @Test
-    public void shouldLoadModulesListFileTest() {
-        Result<Void> result = OSQAConfig.loadModulesListFile();
+    public void shouldLoadFeaturesListFileTest() {
+        Result<Void> result = OSQAConfig.loadFeaturesListFile();
         System.out.println(result);
         assertThat(result instanceof Result.Success<Void>).isTrue();
     }
     @Test
-    public void shouldComposeModuleListTest() {
-        Result<Void> result = OSQAConfig.loadModulesListFile();
+    public void shouldComposeFeatureListTest() {
+        Result<Void> result = OSQAConfig.loadFeaturesListFile();
         assertThat(result instanceof Result.Success).isTrue();
-        Result<OSQAModule> loadModulesResult = OSQAConfig.loadModule(OSQAConfig.MODULE_FILE);
-        assertThat(loadModulesResult instanceof Result.Success<OSQAModule>).isTrue();
-        var calendarAndNavModule = ((Result.Success<OSQAModule>) loadModulesResult).value();
-        assertThat(calendarAndNavModule).isNotNull();
-        assertThat(calendarAndNavModule);
-        assertThat(calendarAndNavModule).isNotNull();
-        assertThat(calendarAndNavModule.uuid()).isEqualTo("a76b4d46-e7df-43ea-afec-221b899ae527");
-        assertThat(calendarAndNavModule.name()).isEqualTo("Core Calendar and Navigation");
-        assertThat(calendarAndNavModule.description()).isEqualTo("Validates basic calendar rendering, navigation controls, and fundamental UI elements.");
-        assertThat(calendarAndNavModule.priority()).isEqualTo("Critical");
-        List<OSQATestCase> testCases = calendarAndNavModule.testCases();
+        Result<OSQAFeature> loadFeaturesResult = OSQAConfig.loadFeature(OSQAConfig.MODULE_FILE);
+        assertThat(loadFeaturesResult instanceof Result.Success<OSQAFeature>).isTrue();
+        var calendarAndNavFeature = ((Result.Success<OSQAFeature>) loadFeaturesResult).value();
+        assertThat(calendarAndNavFeature).isNotNull();
+        assertThat(calendarAndNavFeature);
+        assertThat(calendarAndNavFeature).isNotNull();
+        assertThat(calendarAndNavFeature.uuid()).isEqualTo("a76b4d46-e7df-43ea-afec-221b899ae527");
+        assertThat(calendarAndNavFeature.name()).isEqualTo("Core Calendar and Navigation");
+        assertThat(calendarAndNavFeature.description()).isEqualTo("Validates basic calendar rendering, navigation controls, and fundamental UI elements.");
+        assertThat(calendarAndNavFeature.priority()).isEqualTo("Critical");
+        List<OSQATestCase> testCases = calendarAndNavFeature.testCases();
         assertThat(testCases).isNotNull();
         assertThat(testCases).isNotEmpty();
         Optional<OSQATestCase> testCase = testCases.stream().findFirst();
@@ -121,22 +121,22 @@ public class AppConfigTest {
     }
     @Test
     public void shouldRejectInvalidJsonFieldsTest() throws IOException{
-        Files.deleteIfExists(modulesFile);
+        Files.deleteIfExists(featuresFile);
         var filePath = Paths.get(OSQAConfig.MODULE_FILE);
-        modulesFile = Files.createFile(filePath);
-        assertThat(modulesFile).isNotNull();
-        assertThat(Files.exists(modulesFile)).isTrue();
-        Files.write(modulesFile, List.of(invalidModulesJson.split("\n")));
-        try(var stream = Files.lines(modulesFile)){
+        featuresFile = Files.createFile(filePath);
+        assertThat(featuresFile).isNotNull();
+        assertThat(Files.exists(featuresFile)).isTrue();
+        Files.write(featuresFile, List.of(invalidFeaturesJson.split("\n")));
+        try(var stream = Files.lines(featuresFile)){
             assertThat(stream.count()).isGreaterThan(0);
         }
-        Result<Void> result = OSQAConfig.loadModulesListFile();
+        Result<Void> result = OSQAConfig.loadFeaturesListFile();
         assertThat(result instanceof Result.Success).isTrue();
-        assertThatThrownBy(() -> OSQAConfig.loadModule(OSQAConfig.MODULE_FILE))
+        assertThatThrownBy(() -> OSQAConfig.loadFeature(OSQAConfig.MODULE_FILE))
                 .isInstanceOf(ValueInstantiationException.class);
     }
     @Test
-    public void shouldGenerateTimestampedModuleFileNameTest(){
+    public void shouldGenerateTimestampedFeatureFileNameTest(){
         var expectedFileName = "2025-11-20-08-34-40.json";
         var extension = "json";
         var created = LocalDateTime.of(2025,11,20,8,34,40);
@@ -157,11 +157,11 @@ public class AppConfigTest {
         Files.deleteIfExists(Paths.get(specFile));
     }
     @Test
-    public void shouldWriteModulesConfFileTest() throws IOException {
+    public void shouldWriteFeaturesConfFileTest() throws IOException {
         var uuid = "5833312b-7c84-4e6d-a067-622eb2156761";
         var testSpec = new OSQATestCase(uuid,"testcase","specfile.json");
-        var module = new OSQAModule(uuid,"Launch application","Module notes","Critical",List.of(testSpec));
-        var result = OSQAConfig.writeModule(Paths.get(OSQAConfig.MODULE_DIR),module);
+        var feature = new OSQAFeature(uuid,"Launch application","Feature notes","Critical",List.of(testSpec));
+        var result = OSQAConfig.writeFeature(Paths.get(OSQAConfig.MODULE_DIR),feature);
         IO.println(result);
         assertThat(result instanceof Result.Success<Path>).isTrue();
         var path = ((Result.Success<Path>) result).value();
@@ -170,24 +170,24 @@ public class AppConfigTest {
         Files.deleteIfExists(((Result.Success<Path>) result).value());
     }
     @Test
-    public void shouldFindAndListModuleConfFilesTest() throws IOException {
+    public void shouldFindAndListFeatureConfFilesTest() throws IOException {
         var uuid = "5833312b-7c84-4e6d-a067-622eb2156761";
-        var moduleTitle = "Launch application";
+        var featureTitle = "Launch application";
         var testSpec = new OSQATestCase(uuid,"testcase","specfile.json");
-        var module = new OSQAModule(uuid,moduleTitle,"Module notes","Critical",List.of(testSpec));
-        var result = OSQAConfig.writeModule(Paths.get(OSQAConfig.MODULE_DIR),module);
+        var feature = new OSQAFeature(uuid,featureTitle,"Feature notes","Critical",List.of(testSpec));
+        var result = OSQAConfig.writeFeature(Paths.get(OSQAConfig.MODULE_DIR),feature);
         IO.println(result);
         assertThat(result instanceof Result.Success<Path>).isTrue();
         var path = ((Result.Success<Path>) result).value();
         assertThat(Files.exists(path)).isTrue();
-        Result<List<OSQAModule>> modulesResult = OSQAConfig.listModules(Paths.get(OSQAConfig.MODULE_DIR));
-        IO.println(modulesResult);
-        assertThat(modulesResult instanceof Result.Success<List<OSQAModule>>).isTrue();
-        var modules = ((Result.Success<List<OSQAModule>>) modulesResult).value();
-        assertThat(modules).isNotEmpty();
-        assertThat(modules.getFirst()).isNotNull();
-        assertThat(modules.getFirst().name()).isNotEmpty();
-        assertThat(modules.getFirst().description()).isNotEmpty();
+        Result<List<OSQAFeature>> featuresResult = OSQAConfig.listFeatures(Paths.get(OSQAConfig.MODULE_DIR));
+        IO.println(featuresResult);
+        assertThat(featuresResult instanceof Result.Success<List<OSQAFeature>>).isTrue();
+        var features = ((Result.Success<List<OSQAFeature>>) featuresResult).value();
+        assertThat(features).isNotEmpty();
+        assertThat(features.getFirst()).isNotNull();
+        assertThat(features.getFirst().name()).isNotEmpty();
+        assertThat(features.getFirst().description()).isNotEmpty();
         Files.deleteIfExists(path);
     }
     @Test
@@ -247,7 +247,7 @@ public class AppConfigTest {
             }
         }
     }
-    private final String modulesJson = """
+    private final String featuresJson = """
             {
                 "uuid": "a76b4d46-e7df-43ea-afec-221b899ae527",
                 "name": "Core Calendar and Navigation",
@@ -262,7 +262,7 @@ public class AppConfigTest {
                 ]
               }
             """;
-    private final String invalidModulesJson = """
+    private final String invalidFeaturesJson = """
             {
                 "uuid": "uuid",
                 "name": "",

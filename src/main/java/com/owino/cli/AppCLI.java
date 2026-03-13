@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQAOutcome;
 import org.slf4j.Logger;
@@ -44,39 +44,39 @@ public class AppCLI {
                 Welcome to OSQA!
                 """);
         var session = new OSQASession(new Scanner(System.in));
-        Optional<String> modulesFile;
+        Optional<String> featuresFile;
         do {
-            modulesFile = switch (OSQAConfig.loadModulesListFile()) {
+            featuresFile = switch (OSQAConfig.loadFeaturesListFile()) {
                 case Result.Success<Void> _ -> Optional.of(OSQAConfig.MODULE_FILE);
                 case Result.Failure (Throwable failure) -> {
-                    LOG.error("Didn't find pre-existing modules config: {}", failure.getLocalizedMessage());
+                    LOG.error("Didn't find pre-existing features config: {}", failure.getLocalizedMessage());
                     yield Optional.empty();
                 }
             };
             try {
-                if (modulesFile.isEmpty() || Files.readString(Paths.get(modulesFile.get())).isBlank()){
+                if (featuresFile.isEmpty() || Files.readString(Paths.get(featuresFile.get())).isBlank()){
                     session.generateTestConfig();
                 }
             } catch (IOException failure){
-                IO.println("Modules config file is empty");
-                IO.println("Setup a modules config for your tests:");
-                modulesFile = Optional.empty();
+                IO.println("Features config file is empty");
+                IO.println("Setup a features config for your tests:");
+                featuresFile = Optional.empty();
             } finally {
-                if (modulesFile.isEmpty())
+                if (featuresFile.isEmpty())
                     session.generateTestConfig();
             }
-        } while (modulesFile.isEmpty());
-        var module = switch (OSQAConfig.loadModule(modulesFile.get())) {
-            case Result.Success<OSQAModule> (OSQAModule moduleValue) -> moduleValue;
+        } while (featuresFile.isEmpty());
+        var feature = switch (OSQAConfig.loadFeature(featuresFile.get())) {
+            case Result.Success<OSQAFeature> (OSQAFeature featureValue) -> featureValue;
             case Result.Failure (Throwable failure) -> throw new RuntimeException(failure);
         };
-        var selectedModule = switch (session.moduleSelection(List.of(module))){
-            case Result.Success<OSQAModule> success -> success.value();
+        var selectedFeature = switch (session.featureSelection(List.of(feature))){
+            case Result.Success<OSQAFeature> success -> success.value();
             case Result.Failure (Throwable failure) -> throw new RuntimeException(failure);
         };
-        IO.println("Selected Module -> " + selectedModule.name());
+        IO.println("Selected Feature -> " + selectedFeature.name());
         List<OSQAOutcome> testSessionReport = new ArrayList<>();
-        for (OSQATestCase testCase : selectedModule.testCases()) {
+        for (OSQATestCase testCase : selectedFeature.testCases()) {
             Optional<OSQATestSpec> optionalTestSpec = switch(OSQAConfig.loadTestCaseSpec(testCase)) {
                 case Result.Success<OSQATestSpec> success -> Optional.of(success.value());
                 case Result.Failure (Throwable failure) -> {

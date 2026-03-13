@@ -59,7 +59,7 @@ public class WelcomeView extends StackPane {
                 Welcome to OSQA!
                 """;
         itemsContainer = new VBox(22);
-        newProjectLabel = new Label("Create new Module or Select Module to Proceed!");
+        newProjectLabel = new Label("Create new Feature or Select Feature to Proceed!");
         var ascii = new Text(welcomeAscii);
         ascii.setFont(Font.font(25));
         ascii.setFill(Color.BLUE);

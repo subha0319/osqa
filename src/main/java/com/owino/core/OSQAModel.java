@@ -19,20 +19,20 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.regex.Pattern;
 public sealed interface OSQAModel {
-    record OSQAModule(
+    record OSQAFeature(
             String uuid,
             String name,
             String description,
             String priority,
             List<OSQATestCase> testCases
     ) implements OSQAModel {
-        public OSQAModule {
+        public OSQAFeature {
             var uuidPattern = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
             var error = new StringBuilder();
-            if (uuid.isBlank() || !uuidPattern.matcher(uuid).find()) error.append("Invalid module uuid\n");
-            if (name.isBlank()) error.append("Module name cannot be blank\n");
-            if (description.isBlank()) error.append("Module description cannot be blank\n");
-            if (priority.isBlank()) error.append("Module priority cannot be blank\n");
+            if (uuid.isBlank() || !uuidPattern.matcher(uuid).find()) error.append("Invalid feature uuid\n");
+            if (name.isBlank()) error.append("Feature name cannot be blank\n");
+            if (description.isBlank()) error.append("Feature description cannot be blank\n");
+            if (priority.isBlank()) error.append("Feature priority cannot be blank\n");
             if (testCases.isEmpty()) error.append("Test cases cannot be empty");
             if (!error.isEmpty()) throw new OSQAValidationException(error.toString());
         }

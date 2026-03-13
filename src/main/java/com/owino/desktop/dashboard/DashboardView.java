@@ -59,9 +59,9 @@ public class DashboardView extends SplitPane {
         });
     }
     @Subscribe
-    public void openModuleDetailedViewEvent(OpenFeatureDetailedViewEvent event){
+    public void openFeatureDetailedViewEvent(OpenFeatureDetailedViewEvent event){
         getItems().removeLast();
-        getItems().add(new FeatureDetailedView(event.selectedModule()));
+        getItems().add(new FeatureDetailedView(event.selectedFeature()));
         setDividerPositions(0.05f);
     }
     @Subscribe

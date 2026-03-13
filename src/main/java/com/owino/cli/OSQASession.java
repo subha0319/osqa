@@ -27,7 +27,7 @@ import com.owino.core.OSQAModel;
 import com.owino.core.OSQAModel.OSQAOutcome;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQAVerification;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import com.owino.core.Result;
 import tools.jackson.databind.ObjectMapper;
 public record OSQASession(Scanner scanner) {
@@ -37,24 +37,24 @@ public record OSQASession(Scanner scanner) {
         do {
             try {
                 var objectMapper = new ObjectMapper().writerWithDefaultPrettyPrinter();
-                var moduleGenerator = new OSQAGenerator();
-                var modules = moduleGenerator.collectModules();
-                for (OSQAModule module : modules) {
-                    var moduleTestCases = moduleGenerator.collectTestCases(module.name());
-                    for (OSQAModel.OSQATestCase testCase : moduleTestCases) {
-                        var testSpecification = moduleGenerator.collectTestCaseSpecs();
+                var featureGenerator = new OSQAGenerator();
+                var features = featureGenerator.collectFeatures();
+                for (OSQAFeature feature : features) {
+                    var featureTestCases = featureGenerator.collectTestCases(feature.name());
+                    for (OSQAModel.OSQATestCase testCase : featureTestCases) {
+                        var testSpecification = featureGenerator.collectTestCaseSpecs();
                         var specFile = testCase.specFile();
                         Files.writeString(Paths.get(specFile),objectMapper.writeValueAsString(testSpecification));
                     }
                 }
-                var moduleConfFileName = OSQAConfig.timestampedName(LocalDateTime.now(),"json");
-                Files.writeString(Paths.get(moduleConfFileName),objectMapper.writeValueAsString(modules));
-                Files.writeString(Paths.get("env.properties"),moduleConfFileName);
+                var featureConfFileName = OSQAConfig.timestampedName(LocalDateTime.now(),"json");
+                Files.writeString(Paths.get(featureConfFileName),objectMapper.writeValueAsString(features));
+                Files.writeString(Paths.get("env.properties"),featureConfFileName);
                 newConfigCreated = true;
             } catch (IOException error){
                 IO.println("""
                             Error!
-                            Failed to create OSQA modules config file
+                            Failed to create OSQA features config file
                             Experience IO error:
                             %s
                             """.formatted(error.getLocalizedMessage()));
@@ -63,18 +63,18 @@ public record OSQASession(Scanner scanner) {
             }
         } while (retryOnFail && !newConfigCreated);
     }
-    public Result<OSQAModule> moduleSelection(List<OSQAModel.OSQAModule> moduleOptions){
-        if (moduleOptions.isEmpty()) return Result.failure("Module options list is empty");
-        IO.println("Select module from available options:");
+    public Result<OSQAFeature> featureSelection(List<OSQAFeature> featureOptions){
+        if (featureOptions.isEmpty()) return Result.failure("Feature options list is empty");
+        IO.println("Select feature from available options:");
         var index = 0;
-        Map<Integer, OSQAModel.OSQAModule> selection = new HashMap<>();
-        for (OSQAModel.OSQAModule moduleOption : moduleOptions) {
-            selection.put(index,moduleOption);
+        Map<Integer, OSQAFeature> selection = new HashMap<>();
+        for (OSQAFeature featureOption : featureOptions) {
+            selection.put(index,featureOption);
             index++;
         }
-        selection.forEach((selectionIndex,module) -> IO.println(selectionIndex + " -> " + module.name() + ":" + module.description()));
-        var moduleIndex = scanner.nextInt();
-        return Result.success(selection.get(moduleIndex));
+        selection.forEach((selectionIndex,feature) -> IO.println(selectionIndex + " -> " + feature.name() + ":" + feature.description()));
+        var featureIndex = scanner.nextInt();
+        return Result.success(selection.get(featureIndex));
     }
     public List<OSQAOutcome> verifyQATestSpec(OSQATestSpec testSpec) {
         IO.println("Action -> " + testSpec.action());

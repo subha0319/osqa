@@ -15,15 +15,15 @@ On-Device Software Quality Assurance (OSQA). Software can and should be determin
 ## Configuration Options
 
 - Minimum passed test cases
-- Minimum passed test cases per module
+- Minimum passed test cases per feature
 
 OSQA is not persistent, data is only collected and maintained during a QA session, when the QA session is terminated, all data is deleted.
 
-## Sample Modules Specification
+## Sample Features Specification
 
 ```json
 {
-  "modules": [
+  "features": [
     {
       "id": "a76b4d46-e7df-43ea-afec-221b899ae527",
       "name": "Core Calendar and Navigation",
@@ -98,7 +98,7 @@ OSQA is not persistent, data is only collected and maintained during a QA sessio
 $ git clone git@github.com:samuelowino/osqa.git
 ```
 
-### Add an OSQA Test Module Data Source in /resources/env.properties
+### Add an OSQA Test Feature Data Source in /resources/env.properties
 
 ### Navigate to project directory; build and run jar file
 ```bash

@@ -29,7 +29,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.EventBus;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQATestCase;
 import com.owino.desktop.OSQANavigationEvents;
@@ -39,18 +39,18 @@ import com.owino.desktop.OSQANavigationEvents.ToggleShowVerificationButtonEvent;
 public class FeatureDetailedView extends VBox {
     public static final Insets MARGIN = new Insets(8,22,8,22);
     private ListView<OSQAVerification> verificationsListView;
-    private final OSQAModule feature;
+    private final OSQAFeature feature;
     private OSQATestSpec testSpec;
     private OSQATestCase testCase;
-    public FeatureDetailedView(OSQAModule feature){
+    public FeatureDetailedView(OSQAFeature feature){
         this.feature = feature;
-        var moduleTitleLabel = new Label();
-        var moduleDescriptionLabel = new Label();
-        moduleTitleLabel.setText(this.feature.name());
-        moduleDescriptionLabel.setText(this.feature.description());
-        moduleDescriptionLabel.setWrapText(true);
-        moduleTitleLabel.setFont(Font.font(47));
-        moduleTitleLabel.setFont(Font.font(15));
+        var featureTitleLabel = new Label();
+        var featureDescriptionLabel = new Label();
+        featureTitleLabel.setText(this.feature.name());
+        featureDescriptionLabel.setText(this.feature.description());
+        featureDescriptionLabel.setWrapText(true);
+        featureTitleLabel.setFont(Font.font(47));
+        featureTitleLabel.setFont(Font.font(15));
         var testCases = this.feature.testCases();
         Optional<Path> appDirOptional = switch (SettingDao.getAppDataDir()){
             case Result.Success<Path> (Path path) -> Optional.of(path);
@@ -94,12 +94,12 @@ public class FeatureDetailedView extends VBox {
                 verificationsListView.setBorder(Border.EMPTY);
             }
         }
-        getChildren().add(moduleTitleLabel);
-        getChildren().add(moduleDescriptionLabel);
+        getChildren().add(featureTitleLabel);
+        getChildren().add(featureDescriptionLabel);
         if (verificationsListView != null)
             getChildren().add(verificationsListView);
-        VBox.setMargin(moduleTitleLabel,MARGIN);
-        VBox.setMargin(moduleDescriptionLabel,MARGIN);
+        VBox.setMargin(featureTitleLabel,MARGIN);
+        VBox.setMargin(featureDescriptionLabel,MARGIN);
         EventBus.getDefault().register(this);
         EventBus.getDefault().post(new ToggleShowVerificationButtonEvent(true));
     }

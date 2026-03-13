@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
-import com.owino.core.OSQAModel.OSQAModule;
+import com.owino.core.OSQAModel.OSQAFeature;
 import com.owino.core.OSQAModel.OSQATestCase;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQAVerification;
@@ -29,24 +29,24 @@ public class OSQAGenerator {
     private int failSafe;
     public OSQAGenerator(Scanner inputReader){ scanner = inputReader; }
     public OSQAGenerator(){ scanner = new Scanner(System.in); }
-    public List<OSQAModel.OSQAModule> collectModules() {
-        List<OSQAModule> modules = new ArrayList<>();
+    public List<OSQAFeature> collectFeatures() {
+        List<OSQAFeature> features = new ArrayList<>();
         var done = false;
         do {
-            String moduleTitle;
+            String featureTitle;
             String description;
             int priority;
             do {
-                IO.println("Set module name:");
-                moduleTitle = scanner.nextLine();
-            } while(moduleTitle.isBlank());
+                IO.println("Set feature name:");
+                featureTitle = scanner.nextLine();
+            } while(featureTitle.isBlank());
             do {
-                IO.println("Set module description:");
+                IO.println("Set feature description:");
                 description = scanner.nextLine();
             } while (description.isBlank());
             do {
                 IO.println("""
-                        Set module priority:
+                        Set feature priority:
                         Critical -> 0
                         Medium -> 1
                         Non-Critical -> 2
@@ -59,25 +59,25 @@ public class OSQAGenerator {
                 case 2 -> "Non-Critical";
                 default -> throw new RuntimeException("Unknown priority type");
             };
-            var testCases = collectTestCases(moduleTitle);
-            var module = new OSQAModule(UUID.randomUUID().toString(),moduleTitle,description,priorityName,testCases);
-            modules.add(module);
-            IO.println("Add another module?: y/n");
+            var testCases = collectTestCases(featureTitle);
+            var feature = new OSQAFeature(UUID.randomUUID().toString(),featureTitle,description,priorityName,testCases);
+            features.add(feature);
+            IO.println("Add another feature?: y/n");
             done = !scanner.nextLine().equalsIgnoreCase("y");
             IO.println("---");
             failSafe++;
         } while(!done && failSafe < FAIL_SAFE_LIMIT);
-        return modules;
+        return features;
     }
-    public List<OSQATestCase> collectTestCases(String moduleName) {
-        IO.println("Create test cases for this module:[" + moduleName + "]");
+    public List<OSQATestCase> collectTestCases(String featureName) {
+        IO.println("Create test cases for this feature:[" + featureName + "]");
         List<OSQATestCase> testCases = new ArrayList<>();
         var done = false;
         do {
             var testCaseTitle = "";
             var specFile = new StringBuilder(UUID.randomUUID().toString())
                     .append("-")
-                    .append(moduleName);
+                    .append(featureName);
             do {
                 IO.println("Set test case testCaseTitle:");
                 testCaseTitle = scanner.nextLine();
