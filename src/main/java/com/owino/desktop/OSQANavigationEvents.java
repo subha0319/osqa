@@ -30,4 +30,5 @@ public sealed interface OSQANavigationEvents {
     record OpenFeaturesListViewEvent() implements OSQANavigationEvents {}
     record ToggleShowVerificationButtonEvent(boolean show) implements OSQANavigationEvents {}
     record ShowVerificationFormEvent() implements OSQANavigationEvents {}
+    record ResetVerificationsEvent() implements  OSQANavigationEvents {}
 }

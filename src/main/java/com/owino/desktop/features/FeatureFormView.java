@@ -159,7 +159,7 @@ public class FeatureFormView extends ScrollPane {
             Optional<String> inputResult = new FeatureVerificationForm().showAndWait();
             if (inputResult.isPresent()){
                 if (!inputResult.get().isBlank()){
-                    verifications.add( new OSQAVerification(0,inputResult.get()));
+                    verifications.add( new OSQAVerification(UUID.randomUUID().toString(),0,inputResult.get()));
                     Alert successAlert = new Alert(Alert.AlertType.NONE);
                     successAlert.setTitle("Success");
                     successAlert.setContentText("""

@@ -15,7 +15,6 @@ package com.owino.desktop.dashboard;
  * You should have received a copy of the GNU General Public License
  * along with OSQA.  If not, see <https://www.gnu.org/licenses/>.
  */
-import com.owino.desktop.OSQANavigationEvents;
 import javafx.geometry.Insets;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
@@ -28,16 +27,20 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import com.owino.desktop.OSQANavigationEvents.OpenDashboardEvent;
 import com.owino.desktop.OSQANavigationEvents.OpenFeatureFormEvent;
+import com.owino.desktop.OSQANavigationEvents.ShowVerificationFormEvent;
+import com.owino.desktop.OSQANavigationEvents.ResetVerificationsEvent;
 import com.owino.desktop.OSQANavigationEvents.ToggleShowVerificationButtonEvent;
 public class AppToolbar extends BorderPane {
     private final HBox rightMostContainer;
     private final Button addVerificationButton;
+    private final Button resetVerificationButton;
     public AppToolbar(){
         var brandLabel = new Label("OSQA");
         addVerificationButton = new Button("New Verification");
         var addFeatureButton = new Button("New Feature");
         var homeButton = new Button("Home");
         var addProductButton = new Button("New Product");
+        resetVerificationButton = new Button("Reset");
         styleBrandLabel(brandLabel);
         rightMostContainer = new HBox();
         rightMostContainer.getChildren().add(addFeatureButton);
@@ -63,7 +66,8 @@ public class AppToolbar extends BorderPane {
             EventBus.getDefault().post(new ToggleShowVerificationButtonEvent(false));
 
         });
-        addVerificationButton.setOnAction(event -> EventBus.getDefault().post(new OSQANavigationEvents.ShowVerificationFormEvent()));
+        addVerificationButton.setOnAction(_ -> EventBus.getDefault().post(new ShowVerificationFormEvent()));
+        resetVerificationButton.setOnAction(_ -> EventBus.getDefault().post(new ResetVerificationsEvent()));
         EventBus.getDefault().register(this);
     }
     private void styleBrandLabel(Label brandLabel) {
@@ -74,9 +78,12 @@ public class AppToolbar extends BorderPane {
     public void showVerificationButton(ToggleShowVerificationButtonEvent event){
         Platform.runLater(() -> {
             rightMostContainer.getChildren().remove(addVerificationButton);
+            rightMostContainer.getChildren().remove(resetVerificationButton);
             if (event.show()) {
                 rightMostContainer.getChildren().add(addVerificationButton);
+                rightMostContainer.getChildren().add(resetVerificationButton);
                 HBox.setMargin(addVerificationButton, new Insets(6));
+                HBox.setMargin(resetVerificationButton, new Insets(6));
             }
         });
     }

@@ -104,7 +104,7 @@ public class OSQAGenerator {
             String description;
             IO.println("Step [" + order + "]");
             description = scanner.nextLine();
-            verifications.add(new OSQAVerification(order,description));
+            verifications.add(new OSQAVerification(UUID.randomUUID().toString(),order,description,false));
             IO.println("Add another verification step: y/n");
             isDone = !scanner.nextLine().equalsIgnoreCase("y");
             order++;

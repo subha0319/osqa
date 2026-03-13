@@ -23,6 +23,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
+
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.owino.core.OSQAModel.OSQAFeature;
 import com.owino.core.OSQAModel.OSQAOutcome;
@@ -57,8 +59,8 @@ public class OSQASessionTest {
                 "b722ba02-26a4-46d6-845b-5a7643df4eeb",
                 "On Device E, mark the 'Team Sync' task as complete.",
                 List.of(
-                        new OSQAVerification(1,"On Device B, the task is marked complete and a new instance appears with the correct future date."),
-                        new OSQAVerification(2,"On Device A, after a sync/refresh, the original task is marked complete and the new instance appears with the correct future date.")
+                        new OSQAVerification(UUID.randomUUID().toString(), 1,"On Device B, the task is marked complete and a new instance appears with the correct future date."),
+                        new OSQAVerification(UUID.randomUUID().toString(),2,"On Device A, after a sync/refresh, the original task is marked complete and the new instance appears with the correct future date.")
                 ));
         List<OSQAOutcome> outcomes = session.verifyQATestSpec(testSpec);
         assertThat(outcomes).isNotEmpty();

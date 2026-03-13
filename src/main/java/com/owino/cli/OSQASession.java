@@ -15,12 +15,11 @@ package com.owino.cli;
  * You should have received a copy of the GNU General Public License
  * along with OSQA.  If not, see <https://www.gnu.org/licenses/>.
  */
+import java.util.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.*;
-
 import com.owino.core.OSQAConfig;
 import com.owino.core.OSQAGenerator;
 import com.owino.core.OSQAModel;

@@ -15,8 +15,8 @@ package com.owino.core;
  * You should have received a copy of the GNU General Public License
  * along with OSQA.  If not, see <https://www.gnu.org/licenses/>.
  */
-import java.nio.file.Path;
 import java.util.List;
+import java.nio.file.Path;
 import java.util.regex.Pattern;
 public sealed interface OSQAModel {
     record OSQAFeature(
@@ -66,14 +66,21 @@ public sealed interface OSQAModel {
         }
     }
     record OSQAVerification(
+            String uuid,
             Integer order,
-            String description
+            String description,
+            boolean verificationStatus
     ) implements OSQAModel {
         public OSQAVerification {
+            var uuidPattern = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
             var error = new StringBuilder();
+            if (uuid.isBlank() || !uuidPattern.matcher(uuid).find()) error.append("Invalid verification uuid\n");
             if (order < 0) error.append("Verification order must start with 0. < 0 order is not supported");
             if (description.isBlank()) error.append("Verification description is required");
             if (!error.isEmpty()) throw new OSQAValidationException(error.toString());
+        }
+        public OSQAVerification(String uuid, Integer order, String description){
+            this(uuid,order,description,false);
         }
     }
     record OSQAOutcome(

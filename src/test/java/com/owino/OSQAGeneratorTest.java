@@ -27,6 +27,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
+
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(MockitoExtension.class)
@@ -84,8 +86,8 @@ public class OSQAGeneratorTest {
     @Test
     public void shouldCollectTestSpecsTest(){
        var action = "On Device B, mark the 'Team Sync' task as complete.";
-       var order0Verification = new OSQAVerification(0,"On Device B, the task is marked complete and a new instance appears with the correct future date.");
-       var order1Verification = new OSQAVerification(1,"On Device A, after a sync/refresh, the original task is marked complete and the new instance appears with the correct future date.");
+       var order0Verification = new OSQAVerification(UUID.randomUUID().toString(), 0,"On Device B, the task is marked complete and a new instance appears with the correct future date.");
+       var order1Verification = new OSQAVerification(UUID.randomUUID().toString(),1,"On Device A, after a sync/refresh, the original task is marked complete and the new instance appears with the correct future date.");
        var verifications = List.of(order0Verification, order1Verification);
        when(scanner.nextLine())
                .thenReturn(action)

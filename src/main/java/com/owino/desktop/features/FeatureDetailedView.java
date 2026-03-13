@@ -16,8 +16,10 @@ package com.owino.desktop.features;
  * along with OSQA.  If not, see <https://www.gnu.org/licenses/>.
  */
 import java.nio.file.Path;
-import java.util.Optional;
+import java.util.*;
+
 import com.owino.core.Result;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.Border;
@@ -34,6 +36,7 @@ import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQATestCase;
 import com.owino.desktop.OSQANavigationEvents;
 import com.owino.core.OSQAModel.OSQAVerification;
+import com.owino.desktop.OSQANavigationEvents.ResetVerificationsEvent;
 import com.owino.desktop.OSQANavigationEvents.ShowVerificationFormEvent;
 import com.owino.desktop.OSQANavigationEvents.ToggleShowVerificationButtonEvent;
 public class FeatureDetailedView extends VBox {
@@ -42,10 +45,13 @@ public class FeatureDetailedView extends VBox {
     private final OSQAFeature feature;
     private OSQATestSpec testSpec;
     private OSQATestCase testCase;
+    private ObservableList<OSQAVerification> observableVerificationsList;
+    private List<OSQAVerification> verifications = new ArrayList<>();
     public FeatureDetailedView(OSQAFeature feature){
         this.feature = feature;
         var featureTitleLabel = new Label();
         var featureDescriptionLabel = new Label();
+        var featureUsageInstructions = new Label();
         featureTitleLabel.setText(this.feature.name());
         featureDescriptionLabel.setText(this.feature.description());
         featureDescriptionLabel.setWrapText(true);
@@ -70,9 +76,10 @@ public class FeatureDetailedView extends VBox {
             };
             if (optionalTestSpect.isPresent()){
                 testSpec = optionalTestSpect.get();
-                var verifications = testSpec.verifications();
-                ObservableList<OSQAVerification> verificationsList = FXCollections.observableList(verifications);
-                verificationsListView = new ListView<>(verificationsList);
+                featureUsageInstructions.setText(testSpec.action());
+                verifications.addAll(testSpec.verifications());
+                observableVerificationsList = FXCollections.observableList(verifications);
+                verificationsListView = new ListView<>(observableVerificationsList);
                 verificationsListView.setCellFactory(_ -> new ListCell<>(){
                     @Override
                     protected void updateItem(OSQAVerification verification, boolean empty) {
@@ -83,10 +90,16 @@ public class FeatureDetailedView extends VBox {
                         } else {
                             var container = new VBox();
                             var checkbox = new CheckBox(verification.description());
-                            checkbox.setSelected(verification.order() == 1);
+                            checkbox.setSelected(verification.verificationStatus());
                             checkbox.setWrapText(true);
                             container.getChildren().add(checkbox);
                             VBox.setMargin(checkbox,MARGIN);
+                            checkbox.selectedProperty().addListener((observableValue,_,newVerifiedStatus) -> {
+                                var updatedVerification = new OSQAVerification(verification.uuid(),verification.order(),verification.description(),newVerifiedStatus);
+                                OSQAConfig.updateVerificationStatus(testSpec,testCase,updatedVerification);
+                                observableVerificationsList.remove(verification);
+                                observableVerificationsList.add(updatedVerification);
+                            });
                             setGraphic(container);
                         }
                     }
@@ -96,9 +109,11 @@ public class FeatureDetailedView extends VBox {
         }
         getChildren().add(featureTitleLabel);
         getChildren().add(featureDescriptionLabel);
+        getChildren().add(featureUsageInstructions);
         if (verificationsListView != null)
             getChildren().add(verificationsListView);
         VBox.setMargin(featureTitleLabel,MARGIN);
+        VBox.setMargin(featureUsageInstructions,MARGIN);
         VBox.setMargin(featureDescriptionLabel,MARGIN);
         EventBus.getDefault().register(this);
         EventBus.getDefault().post(new ToggleShowVerificationButtonEvent(true));
@@ -109,7 +124,7 @@ public class FeatureDetailedView extends VBox {
         Optional<String> inputResult = dialog.showAndWait();
         if (inputResult.isPresent()){
             var verificationDesc = inputResult.get();
-            var newVerification = new OSQAVerification(0,verificationDesc);
+            var newVerification = new OSQAVerification(UUID.randomUUID().toString(),0,verificationDesc,false);
             if (testSpec != null){
                 var verifications = testSpec.verifications();
                 verifications.add(newVerification);
@@ -133,5 +148,18 @@ public class FeatureDetailedView extends VBox {
                 }
             }
         }
+    }
+    @Subscribe
+    public void resetVerificationsEvent(ResetVerificationsEvent event){
+        verifications.stream()
+                .filter(OSQAVerification::verificationStatus)
+                .forEach(verification -> {
+            var updatedVerification = new OSQAVerification(verification.uuid(),verification.order(),verification.description(),false);
+            OSQAConfig.updateVerificationStatus(testSpec,testCase,updatedVerification);
+            Platform.runLater(() -> {
+                observableVerificationsList.remove(verification);
+                observableVerificationsList.add(updatedVerification);
+            });
+        });
     }
 }
