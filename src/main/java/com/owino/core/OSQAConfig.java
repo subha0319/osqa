@@ -138,21 +138,25 @@ public class OSQAConfig {
             return Result.failure(error.getLocalizedMessage());
         }
     }
-    public static Result<Void> updateVerificationStatus(OSQATestSpec testSpec,OSQATestCase parentTestCase, OSQAVerification updatedVerification) {
+    public static Result<OSQATestSpec> updateVerificationStatus(OSQATestSpec testSpec,OSQATestCase parentTestCase, OSQAVerification updatedVerification) {
+        List<OSQAVerification> updatedVerifications = new ArrayList<>();
         var affectedVerification = testSpec.verifications()
                 .stream()
                 .filter(e -> e.uuid().equals(updatedVerification.uuid()))
                 .findFirst();
         if (affectedVerification.isEmpty()) return Result.failure("Failed to update verification status: verification was not registered.");
-        List<OSQAVerification> updatedVerifications = new ArrayList<>();
-        updatedVerifications.add(updatedVerification);
         var unAffectedVerifications = testSpec.verifications()
                 .stream()
                 .filter(e -> !e.uuid().equals(updatedVerification.uuid()))
                 .toList();
-        if (!unAffectedVerifications.isEmpty())
+        updatedVerifications.add(updatedVerification);
+        if (!unAffectedVerifications.isEmpty()) {
             updatedVerifications.addAll(unAffectedVerifications);
+        }
         var updatedTestSpec = new OSQATestSpec(testSpec.uuid(),testSpec.action(),updatedVerifications);
-        return overwriteSpecFile(updatedTestSpec,parentTestCase);
+        return switch (overwriteSpecFile(updatedTestSpec,parentTestCase)){
+            case Result.Success<Void> _ -> loadTestCaseSpec(parentTestCase);
+            case Result.Failure<Void> failure -> Result.failure(failure.error().getLocalizedMessage());
+        };
     }
 }

@@ -29,7 +29,6 @@ import org.greenrobot.eventbus.EventBus;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import com.owino.core.OSQAModel.OSQAFeature;
-import com.owino.core.OSQAModel.OSQAProduct;
 import com.owino.core.OSQAModel.OSQATestSpec;
 import com.owino.core.OSQAModel.OSQATestCase;
 import com.owino.desktop.OSQANavigationEvents;
@@ -39,12 +38,11 @@ import com.owino.desktop.OSQANavigationEvents.ShowVerificationFormEvent;
 import com.owino.desktop.OSQANavigationEvents.ToggleShowVerificationButtonEvent;
 public class FeatureDetailedView extends VBox {
     public static final Insets MARGIN = new Insets(8,22,8,22);
+    private final ObservableList<OSQAVerification> observableVerificationsList = FXCollections.observableArrayList();
     private ListView<OSQAVerification> verificationsListView;
     private final OSQAFeature feature;
     private OSQATestSpec testSpec;
-    private OSQATestCase testCase;
-    private ObservableList<OSQAVerification> observableVerificationsList;
-    private final List<OSQAVerification> verifications = new ArrayList<>();
+    private final OSQATestCase testCase;
     public FeatureDetailedView(OSQAFeature feature){
         this.feature = feature;
         var featureTitleLabel = new Label();
@@ -67,8 +65,6 @@ public class FeatureDetailedView extends VBox {
         if (optionalTestSpect.isPresent()){
             testSpec = optionalTestSpect.get();
             featureUsageInstructions.setText(testSpec.action());
-            verifications.addAll(testSpec.verifications());
-            observableVerificationsList = FXCollections.observableList(verifications);
             verificationsListView = new ListView<>(observableVerificationsList);
             verificationsListView.setCellFactory(_ -> new ListCell<>(){
                 @Override
@@ -79,16 +75,31 @@ public class FeatureDetailedView extends VBox {
                         setGraphic(null);
                     } else {
                         var container = new VBox();
-                        var checkbox = new CheckBox(verification.description());
-                        checkbox.setSelected(verification.verificationStatus());
-                        checkbox.setWrapText(true);
-                        container.getChildren().add(checkbox);
-                        VBox.setMargin(checkbox,MARGIN);
-                        checkbox.selectedProperty().addListener((observableValue,_,newVerifiedStatus) -> {
+                        var verificationCheckbox = new CheckBox(verification.description());
+                        verificationCheckbox.setSelected(verification.verificationStatus());
+                        verificationCheckbox.setWrapText(true);
+                        container.getChildren().add(verificationCheckbox);
+                        VBox.setMargin(verificationCheckbox,MARGIN);
+                        verificationCheckbox.selectedProperty().addListener((observableValue,_,newVerifiedStatus) -> {
                             var updatedVerification = new OSQAVerification(verification.uuid(),verification.order(),verification.description(),newVerifiedStatus);
-                            OSQAConfig.updateVerificationStatus(testSpec,testCase,updatedVerification);
-                            observableVerificationsList.remove(verification);
-                            observableVerificationsList.add(updatedVerification);
+                            switch (OSQAConfig.updateVerificationStatus(testSpec,testCase,updatedVerification)){
+                                case Result.Success<OSQATestSpec> (OSQATestSpec updatedTestSpec) -> {
+                                    testSpec = updatedTestSpec;
+                                    var alert = new Alert(Alert.AlertType.INFORMATION);
+                                    alert.setTitle("Success!");
+                                    alert.setContentText("Verification Updated!");
+                                    alert.show();
+                                    reloadVerifications();
+                                }
+                                case Result.Failure<OSQATestSpec> failure -> {
+                                    var alert = new Alert(Alert.AlertType.INFORMATION);
+                                    alert.setContentText("""
+                                            Verification Update Failed!
+                                            Error: %s
+                                            """.formatted(failure.error().getLocalizedMessage()));
+                                    alert.show();
+                                }
+                            }
                         });
                         setGraphic(container);
                     }
@@ -106,6 +117,7 @@ public class FeatureDetailedView extends VBox {
         VBox.setMargin(featureDescriptionLabel,MARGIN);
         EventBus.getDefault().register(this);
         EventBus.getDefault().post(new ToggleShowVerificationButtonEvent(true));
+        reloadVerifications();
     }
     @Subscribe
     public void showNewVerificationFormEvent(ShowVerificationFormEvent event){
@@ -140,15 +152,23 @@ public class FeatureDetailedView extends VBox {
     }
     @Subscribe
     public void resetVerificationsEvent(ResetVerificationsEvent event){
-        verifications.stream()
+        var updatedVerifications = testSpec.verifications().stream()
                 .filter(OSQAVerification::verificationStatus)
-                .forEach(verification -> {
-            var updatedVerification = new OSQAVerification(verification.uuid(),verification.order(),verification.description(),false);
-            OSQAConfig.updateVerificationStatus(testSpec,testCase,updatedVerification);
-            Platform.runLater(() -> {
-                observableVerificationsList.remove(verification);
-                observableVerificationsList.add(updatedVerification);
-            });
+                .map(verification -> new OSQAVerification(verification.uuid(),verification.order(),verification.description(),false))
+                .toList();
+        for (OSQAVerification updatedVerification : updatedVerifications) {
+            switch (OSQAConfig.updateVerificationStatus(testSpec,testCase,updatedVerification)){
+                case Result.Success<OSQATestSpec> (OSQATestSpec updatedTestSpec) -> testSpec = updatedTestSpec;
+                case Result.Failure<OSQATestSpec> failure -> IO.println(failure.error().getLocalizedMessage());
+            }
+        }
+        reloadVerifications();
+    }
+    public void reloadVerifications(){
+        Platform.runLater(() -> {
+            observableVerificationsList.removeAll();
+            observableVerificationsList.clear();
+            observableVerificationsList.addAll(testSpec.verifications());
         });
     }
 }

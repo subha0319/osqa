@@ -284,7 +284,7 @@ public class AppConfigTest {
         IO.println(result);
         assertThat(result instanceof Result.Success<Void>).isTrue();
         var updatedVerification1 = new OSQAVerification(verification.uuid(),verification.order(),verification.description(),true);
-        Result<Void> updatedResult = OSQAConfig.updateVerificationStatus(specification,testCase,updatedVerification1);
+        Result<OSQATestSpec> updatedResult = OSQAConfig.updateVerificationStatus(specification,testCase,updatedVerification1);
         assertThat(updatedResult).isInstanceOf(Result.Success.class);
         var testSpecLoadResult = OSQAConfig.loadTestCaseSpec(testCase);
         IO.println(result);
