@@ -16,6 +16,7 @@ package com.owino.desktop.features;
  * along with OSQA.  If not, see <https://www.gnu.org/licenses/>.
  */
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
@@ -23,8 +24,12 @@ import java.util.Optional;
 import java.util.ArrayList;
 import com.owino.core.Result;
 import com.owino.desktop.CSS;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.layout.Border;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import java.time.LocalDateTime;
@@ -43,20 +48,28 @@ import com.owino.desktop.products.OSQAProductDao;
 import com.owino.core.OSQAModel.OSQAVerification;
 public class FeatureFormView extends ScrollPane {
     private final List<OSQATestCase> testCases = new ArrayList<>();
+    private final ComboBox<OSQAProduct> productComboBox = new ComboBox<>();
+    private final ObservableList<OSQAVerification> verificationsList = FXCollections.observableArrayList();
     private static final Insets MARGIN = new Insets(6,22,12,22);
     private static final Insets FIELD_MARGIN = new Insets(4,12,2,12);
     private static final Insets LABEL_MARGIN = new Insets(12);
-    private static final Font FORM_LABEL_FONT = Font.font(17);
-    private final ComboBox<OSQAProduct> productComboBox = new ComboBox<>();
+    private static final Font FORM_LABEL_FONT = Font.font(20);
     private final VBox verificationListContainer = new VBox();
-    private final List<OSQAVerification> verifications = new ArrayList<>();
-    private TextArea userActionField;
+    private TextArea usageInstructionsTextArea;
     private TextField featureTitleTextField;
-    public FeatureFormView(){
+    private TextField descriptionTextField;
+    private OSQAFeature feature;
+    private boolean isEditMode;
+    private OSQATestSpec testSpec;
+    private OSQATestCase testCase;
+    public FeatureFormView(OSQAFeature editModeFeature,boolean isEditMode){
+        this.isEditMode = isEditMode;
+        this.feature = editModeFeature;
         var featureForm = initFeatureForm();
         setContent(featureForm);
         setFitToWidth(true);
-        initProducts();
+        if (!isEditMode)
+            initProducts();
     }
     private VBox initFeatureForm() {
         var formContainer = new VBox();
@@ -75,7 +88,7 @@ public class FeatureFormView extends ScrollPane {
         var featureTitleText = new Text("Name");
         featureTitleTextField = new TextField();
         var descriptionText = new Text("Description");
-        var descriptionTextField = new TextField();
+        descriptionTextField = new TextField();
         productComboBox.setMinWidth(900);
         productTitleLabel.setFont(FORM_LABEL_FONT);
         featureTitleText.setFont(FORM_LABEL_FONT);
@@ -100,45 +113,149 @@ public class FeatureFormView extends ScrollPane {
         VBox.setMargin(featureDetailsContainer,MARGIN);
         actionButtonsContainer.getChildren().add(saveButton);
         VBox.setMargin(saveButton,MARGIN);
-        addTestCaseForm(formContainer);
+
+        var testCaseFormContainer = new VBox();
+        var separator = new Separator();
+        var userActionTitle = new Text("Usage instructions");
+        usageInstructionsTextArea = new TextArea();
+        userActionTitle.setFont(FORM_LABEL_FONT);
+        usageInstructionsTextArea.setFont(Font.font(15));
+        testCaseFormContainer.getChildren().add(userActionTitle);
+        testCaseFormContainer.getChildren().add(usageInstructionsTextArea);
+        testCaseFormContainer.getChildren().add(separator);
+        VBox.setMargin(userActionTitle,LABEL_MARGIN);
+        VBox.setMargin(usageInstructionsTextArea,FIELD_MARGIN);
+        formContainer.getChildren().add(testCaseFormContainer);
+        VBox.setMargin(testCaseFormContainer,MARGIN);
+        var verificationsContainer = new BorderPane();
+        var verificationLabel = new Text("Verifications:");
+        var addVerificationButton = new Button("Add Verification");
+        verificationsContainer.setLeft(verificationLabel);
+        verificationsContainer.setRight(addVerificationButton);
+        verificationsContainer.setBottom(verificationListContainer);
+        BorderPane.setMargin(verificationLabel,FIELD_MARGIN);
+        verificationLabel.setFont(FORM_LABEL_FONT);
+        testCaseFormContainer.getChildren().add(verificationsContainer);
+        testCaseFormContainer.setStyle(CSS.FORM_SECTION_BORDER);
+        addVerificationButton.setOnAction(_ -> {
+            Optional<String> inputResult = new FeatureVerificationForm().showAndWait();
+            if (inputResult.isPresent()){
+                if (!inputResult.get().isBlank()){
+                    verificationsList.add( new OSQAVerification(UUID.randomUUID().toString(),0,inputResult.get()));
+                    Alert successAlert = new Alert(Alert.AlertType.NONE);
+                    successAlert.setTitle("Success");
+                    successAlert.setContentText("""
+                            Verification step
+                            (%s)
+                            has been added successfully.
+                            This feature now has (%d) verification steps.
+                            """.formatted(inputResult.get(), verificationsList.size()));
+                    successAlert.getButtonTypes().add(ButtonType.OK);
+                    successAlert.show();
+                }
+            }
+        });
+        if (isEditMode){
+            initProducts();
+            var productResult = OSQAProductDao.findProductByUuid(feature.productUuid());
+            if (productResult instanceof Result.Success<OSQAProduct>(OSQAProduct product)){
+                productComboBox.getSelectionModel().select(product);
+            }
+            featureTitleTextField.setText(feature.name());
+            descriptionTextField.setText(feature.description());
+            testCases.addAll(feature.testCases());
+            testCase = testCases.getFirst();
+            var testCaseLoadResult = OSQAConfig.loadTestCaseSpec(testCase);
+            if (testCaseLoadResult instanceof Result.Success<OSQATestSpec>(OSQATestSpec spec)){
+                testSpec = spec;
+                IO.println("Test Spec:\n" + new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(testSpec));
+                usageInstructionsTextArea.setText(testSpec.action());
+                verificationsList.addAll(testSpec.verifications());
+            }
+        }
+        var verificationsListView = new ListView<>(verificationsList);
+        verificationsListView.setCellFactory(_ -> new ListCell<>(){
+            @Override
+            protected void updateItem(OSQAVerification verification, boolean empty) {
+                super.updateItem(verification, empty);
+                if (empty || verification == null){
+                    setText("");
+                    setGraphic(null);
+                } else {
+                    var buttonsContainer = new HBox(12);
+                    var container = new VBox();
+                    var contentContainer = new BorderPane();
+                    var verificationCheckbox = new CheckBox(verification.description());
+                    var deleteButton = new Button("Delete");
+                    var editButton = new Button("Edit");
+                    deleteButton.setTextFill(Color.RED);
+                    deleteButton.setFont(Font.font(12));
+                    editButton.setFont(Font.font(12));
+                    buttonsContainer.getChildren().addAll(deleteButton,editButton);
+                    verificationCheckbox.setSelected(verification.verificationStatus());
+                    verificationCheckbox.setWrapText(true);
+                    verificationCheckbox.selectedProperty().addListener((observableValue,_,newVerifiedStatus) -> {
+                        var updatedVerification = new OSQAVerification(verification.uuid(),verification.order(),verification.description(),newVerifiedStatus);
+                        switch (OSQAConfig.updateVerificationStatus(testSpec,testCase,updatedVerification)){
+                            case Result.Success<OSQATestSpec> (OSQATestSpec updatedTestSpec) -> {
+                                testSpec = updatedTestSpec;
+                                //reloadVerifications();
+                            }
+                            case Result.Failure<OSQATestSpec> failure -> {
+                                var alert = new Alert(Alert.AlertType.INFORMATION);
+                                alert.setContentText("""
+                                            Verification Update Failed!
+                                            Error: %s
+                                            """.formatted(failure.error().getLocalizedMessage()));
+                                alert.show();
+                            }
+                        }
+                    });
+                    deleteButton.setOnAction(_ -> verificationsList.removeIf(e -> e.uuid().equalsIgnoreCase(verification.uuid())));
+                    contentContainer.setLeft(verificationCheckbox);
+                    contentContainer.setRight(buttonsContainer);
+                    container.getChildren().add(contentContainer);
+                    container.getChildren().add(new Separator());
+                    VBox.setMargin(contentContainer,new Insets(0,22,0,8));
+                    setGraphic(container);
+                }
+            }
+        });
+        verificationsListView.setBorder(Border.EMPTY);
+        testCaseFormContainer.getChildren().add(verificationsListView);
+        VBox.setMargin(verificationsListView,new Insets(22,0,12,6));
         saveButton.setOnAction(_ -> {
             var selectedProduct = productComboBox.getValue();
-            if (selectedProduct == null) return;
-            var testCaseTitle = "testcase";
-            var appDir = selectedProduct.projectDir();
-            var specFile = testCaseTitle + OSQAConfig.timestampedName(LocalDateTime.now(),"json");
-            var filePath = appDir.toAbsolutePath().toString().concat(File.separator).concat(specFile);
-            var testCase = new OSQATestCase(UUID.randomUUID().toString(),testCaseTitle,filePath);
-            var specification = new OSQATestSpec(UUID.randomUUID().toString(),userActionField.getText(),verifications);
-            OSQAConfig.writeSpecFile(appDir,specification,specFile);
-            testCases.add(testCase);
-            var featureTitle = featureTitleTextField.getText();
-            var featureDescription = descriptionTextField.getText();
-            var prefix = "feature";
-            var fileNameBuilder = new StringBuilder(appDir.toUri().getPath());
-            fileNameBuilder.append(File.separator);
-            fileNameBuilder.append(prefix);
-            fileNameBuilder.append(featureTitle.replaceAll(" ",""));
-            fileNameBuilder.append(OSQAConfig.timestampedName(LocalDateTime.now(),"json"));
-            var fileName = fileNameBuilder.toString();
-            var path = Paths.get(fileName);
-            var feature = new OSQAFeature(
-                    UUID.randomUUID().toString(),
-                    selectedProduct.uuid(),
-                    featureTitle,
-                    featureDescription,
-                    "Critical",
-                    path.getFileName().toAbsolutePath().toString(),
-                    testCases);
-            OSQAConfig.writeFeature(feature);
-            IO.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(feature));
-            Alert successAlert = new Alert(Alert.AlertType.NONE);
-            successAlert.setTitle("Success!");
-            successAlert.setContentText("Feature created successfully!");
-            successAlert.getButtonTypes().add(ButtonType.OK);
-            if (successAlert.showAndWait().isPresent()){
-                successAlert.close();
-                EventBus.getDefault().post(new OSQANavigationEvents.OpenDashboardEvent());
+            var formDataWarning = new Alert(Alert.AlertType.ERROR);
+            if (selectedProduct == null){
+                formDataWarning.setContentText("Select the product associated with this feature");
+                formDataWarning.show();
+                return;
+            }
+            if (featureTitleTextField.getText().isBlank()){
+                formDataWarning.setContentText("Feature name is required!");
+                formDataWarning.show();
+                return;
+            }
+            if (descriptionTextField.getText().isBlank()){
+                formDataWarning.setContentText("Feature description is required!");
+                formDataWarning.show();
+                return;
+            }
+            if (usageInstructionsTextArea.getText().isBlank()){
+                formDataWarning.setContentText("Feature usage instructions are required!");
+                formDataWarning.show();
+                return;
+            }
+            if (verificationsList.isEmpty()){
+                formDataWarning.setContentText("Feature verifications are required!");
+                formDataWarning.show();
+                return;
+            }
+            if (isEditMode){
+                updateFeature();
+            } else {
+                createFeature();
             }
         });
         productComboBox.setCellFactory(_ -> new ListCell<>(){
@@ -169,53 +286,79 @@ public class FeatureFormView extends ScrollPane {
         });
         return formContainer;
     }
-    private void addTestCaseForm(VBox container) {
-        var testCaseFormContainer = new VBox();
-        var separator = new Separator();
-        var userActionTitle = new Text("Usage instructions");
-        userActionField = new TextArea();
-        userActionTitle.setFont(FORM_LABEL_FONT);
-        userActionField.setFont(Font.font(15));
-        testCaseFormContainer.getChildren().add(userActionTitle);
-        testCaseFormContainer.getChildren().add(userActionField);
-        testCaseFormContainer.getChildren().add(separator);
-        VBox.setMargin(userActionTitle,LABEL_MARGIN);
-        VBox.setMargin(userActionField,FIELD_MARGIN);
-        container.getChildren().add(testCaseFormContainer);
-        VBox.setMargin(testCaseFormContainer,MARGIN);
-        var verificationsContainer = new BorderPane();
-        var verificationLabel = new Text("Verifications:");
-        var addVerificationButton = new Button("Add Verification");
-        verificationsContainer.setLeft(verificationLabel);
-        verificationsContainer.setRight(addVerificationButton);
-        verificationsContainer.setBottom(verificationListContainer);
-        BorderPane.setMargin(verificationLabel,FIELD_MARGIN);
-        verificationLabel.setFont(FORM_LABEL_FONT);
-        var verificationSeparator = new Separator();
-        testCaseFormContainer.getChildren().add(verificationsContainer);
-        testCaseFormContainer.getChildren().add(verificationSeparator);
-        testCaseFormContainer.setStyle(CSS.FORM_SECTION_BORDER);
-        addVerificationButton.setOnAction(_ -> {
-            Optional<String> inputResult = new FeatureVerificationForm().showAndWait();
-            if (inputResult.isPresent()){
-                if (!inputResult.get().isBlank()){
-                    verifications.add( new OSQAVerification(UUID.randomUUID().toString(),0,inputResult.get()));
-                    Alert successAlert = new Alert(Alert.AlertType.NONE);
-                    successAlert.setTitle("Success");
-                    successAlert.setContentText("""
-                            Verification step
-                            (%s)
-                            has been added successfully.
-                            This feature now has (%d) verification steps.
-                            """.formatted(inputResult.get(),verifications.size()));
-                    successAlert.getButtonTypes().add(ButtonType.OK);
-                    successAlert.show();
-                    var verificationCheckbox = new CheckBox(inputResult.get());
-                    verificationListContainer.getChildren().add(verificationCheckbox);
-                    VBox.setMargin(verificationCheckbox, new Insets(8));
-                }
+    private void updateFeature() {
+        var selectedProduct = productComboBox.getValue();
+        var featureTitle = featureTitleTextField.getText();
+        var featureDescription = descriptionTextField.getText();
+        testSpec = new OSQATestSpec(testSpec.uuid(), usageInstructionsTextArea.getText(), verificationsList);
+        OSQAConfig.overwriteSpecFile(testSpec,testCase);
+        feature = new OSQAFeature(
+                feature.uuid(),
+                selectedProduct.uuid(),
+                featureTitle,
+                featureDescription,
+                "Critical",
+                feature.filePath(),
+                testCases);
+        Result<Void> featureWriteResult = OSQAConfig.overwriteFeature(feature,testSpec,testCase);
+        if (featureWriteResult instanceof Result.Success<Void>){
+            IO.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(feature));
+            var successAlert = new Alert(Alert.AlertType.INFORMATION);
+            successAlert.setContentText("Feature updated successfully!");
+            if (successAlert.showAndWait().isPresent()){
+                successAlert.close();
+                EventBus.getDefault().post(new OSQANavigationEvents.OpenDashboardEvent());
             }
-        });
+        } else {
+            var errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setContentText("Failed to update feature!");
+            errorAlert.show();
+        }
+    }
+    private void createFeature() {
+        var selectedProduct = productComboBox.getValue();
+        var testCaseTitle = "testcase";
+        var appDir = selectedProduct.projectDir();
+        var specFile = testCaseTitle + OSQAConfig.timestampedName(LocalDateTime.now(),"json");
+        var filePath = appDir.toAbsolutePath().toString().concat(File.separator).concat(specFile);
+        testCase = new OSQATestCase(UUID.randomUUID().toString(),testCaseTitle,filePath);
+        var specification = new OSQATestSpec(UUID.randomUUID().toString(), usageInstructionsTextArea.getText(), verificationsList);
+        OSQAConfig.writeSpecFile(appDir,specification,specFile);
+        testCases.add(testCase);
+        var featureTitle = featureTitleTextField.getText();
+        var featureDescription = descriptionTextField.getText();
+        var prefix = "feature";
+        var fileNameBuilder = new StringBuilder(appDir.toUri().getPath());
+        fileNameBuilder.append(File.separator);
+        fileNameBuilder.append(prefix);
+        fileNameBuilder.append(featureTitle.replaceAll(" ",""));
+        fileNameBuilder.append(OSQAConfig.timestampedName(LocalDateTime.now(),"json"));
+        var fileName = fileNameBuilder.toString();
+        var featureFilePath = Paths.get(fileName);
+        feature = new OSQAFeature(
+                UUID.randomUUID().toString(),
+                selectedProduct.uuid(),
+                featureTitle,
+                featureDescription,
+                "Critical",
+                featureFilePath.toAbsolutePath().toString(),
+                testCases);
+        var featureWriteResult = OSQAConfig.writeFeature(feature);
+        if (featureWriteResult instanceof Result.Success<Path>){
+            IO.println(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(feature));
+            var successAlert = new Alert(Alert.AlertType.INFORMATION);
+            successAlert.setContentText("Feature created successfully!");
+            successAlert.getButtonTypes().add(ButtonType.OK);
+            if (successAlert.showAndWait().isPresent()){
+                successAlert.close();
+                EventBus.getDefault().post(new OSQANavigationEvents.OpenDashboardEvent());
+            }
+        } else {
+            var errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setContentText("Failed to create feature!");
+            errorAlert.getButtonTypes().add(ButtonType.OK);
+            errorAlert.show();
+        }
     }
     private void initProducts() {
         switch(OSQAProductDao.listProducts()){

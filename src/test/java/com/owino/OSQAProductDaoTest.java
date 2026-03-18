@@ -131,6 +131,27 @@ public class OSQAProductDaoTest {
             assertThat(updated.target()).isEqualTo(updatedProduct.target());
         }
     }
+    @Test
+    public void shouldFindProductByUuidTest() throws IOException {
+        var projectDir = Paths.get(OSQAConfig.MODULE_DIR);
+        if (!Files.exists(projectDir))
+            Files.createDirectory(projectDir);
+        var product = new OSQAProduct(
+                "a76b4d46-e7df-43ea-afec-221b899ae527",
+                "OSQA Desktop",
+                "OSX",
+                projectDir);
+        var result = OSQAProductDao.saveProduct(product);
+        assertThat(result).isInstanceOf(Result.Success.class);
+        var findResult = OSQAProductDao.findProductByUuid(product.uuid());
+        assertThat(findResult).isInstanceOf(Result.Success.class);
+        if (findResult instanceof Result.Success<OSQAProduct>(OSQAProduct matchingProduct)){
+            assertThat(matchingProduct).isNotNull();
+            assertThat(matchingProduct.uuid()).isEqualTo(product.uuid());
+            assertThat(matchingProduct.name()).isEqualTo(product.name());
+            assertThat(matchingProduct.target()).isEqualTo(product.target());
+        }
+    }
     @AfterEach
     public void tearDown() throws IOException {
         Files.deleteIfExists(Paths.get(OSQAConfig.MODULE_DIR + File.separator + OSQAConfig.OSQA_DB));

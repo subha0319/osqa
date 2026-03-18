@@ -149,4 +149,28 @@ public class OSQAProductDao {
             return Result.failure(error.getLocalizedMessage());
         }
     }
+    public static Result<OSQAProduct> findProductByUuid(String productUuid) {
+        try {
+            var findSql = """
+                SELECT * FROM Products
+                WHERE uuid = ?
+                """;
+            if (!(connection() instanceof Result.Success<Connection>(Connection connection))){
+                return Result.failure("Failed to open database connection");
+            }
+            var statement = connection.prepareStatement(findSql);
+            statement.setString(1,productUuid);
+            var result = statement.executeQuery();
+            if (result.next()){
+                var uuid = result.getString(1);
+                var name = result.getString(2);
+                var target = result.getString(3);
+                var projectDir = Paths.get(result.getString(4));
+                var product = new OSQAProduct(uuid,name,target,projectDir);
+                return Result.success(product);
+            } else return Result.failure("Failed to load products");
+        } catch (SQLException failure){
+            return Result.failure("Failed to load products");
+        }
+    }
 }

@@ -17,6 +17,8 @@ package com.owino.desktop.features;
  */
 import java.util.List;
 import java.util.Optional;
+
+import com.owino.core.OSQAModel;
 import javafx.geometry.Pos;
 import com.owino.core.Result;
 import javafx.scene.layout.*;
@@ -89,6 +91,7 @@ public class FeatureListingsView extends VBox {
                     featureItemContainer.setOnMouseEntered(_ -> featureItemContainer.setBackground(blueBackground));
                     featureItemContainer.setOnMouseExited(_ -> featureItemContainer.setBackground(blackBackground));
                     deleteButton.setOnAction(_ -> deleteFeature(feature));
+                    editButton.setOnAction(_ -> EventBus.getDefault().post(new OpenFeatureFormEvent(feature,true)));
                     setGraphic(featureItemContainer);
                 }
             }

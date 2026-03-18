@@ -58,7 +58,7 @@ public class DashboardView extends SplitPane {
     public void openFeatureFormEvent(OpenFeatureFormEvent event){
         Platform.runLater(() -> {
             getItems().removeLast();
-            getItems().add(new FeatureFormView());
+            getItems().add(new FeatureFormView(event.feature(),event.isEditMode()));
             setDividerPositions(0.05f);
         });
     }

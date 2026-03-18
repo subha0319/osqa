@@ -468,6 +468,48 @@ public class AppConfigTest {
         assertThat(actualTestSpec.verifications().getFirst().verificationStatus()).isEqualTo(verification2.verificationStatus());
         assertThat(actualTestSpec.verifications().getFirst().uuid()).isEqualTo(verification2.uuid());
     }
+    @Test
+    public void shouldOverwriteFeatureTest(){
+        var uuid = "5833312b-7c84-4e6d-a067-622eb2156761";
+        var prefix = "feature";
+        var appDataDir = Paths.get(OSQAConfig.MODULE_DIR);
+        var nameBuilder = new StringBuilder(appDataDir.toUri().getPath());
+        var featureTitle = "Feature notes";
+        nameBuilder.append(File.separator);
+        nameBuilder.append(prefix);
+        nameBuilder.append(featureTitle.replaceAll(" ",""));
+        nameBuilder.append(OSQAConfig.timestampedName(LocalDateTime.now(),"json"));
+        var fileName = nameBuilder.toString();
+        var specFilepath = appDataDir.toUri().getPath() + File.separator + "specfile.json";
+        var testcase = new OSQATestCase(uuid,"testcase",specFilepath);
+        var feature = new OSQAFeature(uuid,"5833312b-7c84-4e6d-a067-622eb2156761","Launch application",featureTitle,"Critical",fileName,List.of(testcase));
+        var result = OSQAConfig.writeFeature(feature);
+        IO.println(result);
+        assertThat(result instanceof Result.Success<Path>).isTrue();
+        var path = ((Result.Success<Path>) result).value();
+        assertThat(Files.exists(path)).isTrue();
+        IO.println(path.getFileName());
+
+        var updatedFeature = new OSQAFeature(uuid,feature.productUuid(),"Launch App v2","Launcher v2 detailed","Low",fileName,List.of(testcase));
+        var verification = new OSQAVerification("6821bca7-50db-4116-aa39-d17760346694",0,"Sample feature verification entry");
+        var testSpec = new OSQATestSpec("b08d4f4a-9d7e-4c60-a596-2f37b54eba1a","User action description",List.of(verification));
+        var overwriteFeatureResult = OSQAConfig.overwriteFeature(updatedFeature,testSpec,testcase);
+        assertThat(overwriteFeatureResult).isInstanceOf(Result.Success.class);
+        var loadFeatureResult = OSQAConfig.loadFeature(fileName);
+        assertThat(loadFeatureResult).isInstanceOf(Result.Success.class);
+        if (loadFeatureResult instanceof Result.Success<OSQAFeature>(OSQAFeature loadedFeature)){
+            assertThat(loadedFeature).isNotNull();
+            assertThat(loadedFeature.name()).isEqualTo(updatedFeature.name());
+            assertThat(loadedFeature.description()).isEqualTo(updatedFeature.description());
+            assertThat(loadedFeature.priority()).isEqualTo(updatedFeature.priority());
+            assertThat(loadedFeature.testCases().size()).isEqualTo(updatedFeature.testCases().size());
+        }
+        var loadTestSpecResult = OSQAConfig.loadTestCaseSpec(updatedFeature.testCases().getFirst());
+        assertThat(loadTestSpecResult).isInstanceOf(Result.Success.class);
+        if (loadTestSpecResult instanceof Result.Success<OSQATestSpec>(OSQATestSpec loadedTestSpec)){
+            assertThat(loadedTestSpec).isNotNull();
+        }
+    }
     @AfterEach
     public void tearDown() throws IOException {
        deleteAppDataFolder();

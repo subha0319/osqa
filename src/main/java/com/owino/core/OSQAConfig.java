@@ -15,14 +15,11 @@ package com.owino.core;
  * You should have received a copy of the GNU General Public License
  * along with OSQA.  If not, see <https://www.gnu.org/licenses/>.
  */
+import java.nio.file.*;
 import java.util.*;
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.LocalDateTime;
-import java.nio.file.StandardOpenOption;
 import java.time.format.DateTimeFormatter;
 import tools.jackson.databind.ObjectMapper;
 import com.owino.core.OSQAModel.OSQAProduct;
@@ -282,7 +279,7 @@ public class OSQAConfig {
                                 throw new RuntimeException(e);
                             }
                         });
-                updatedFeatures.forEach(updatedFeature -> OSQAConfig.writeFeature(updatedFeature));
+                updatedFeatures.forEach(OSQAConfig::writeFeature);
                 return Result.success(null);
             } catch (IOException error){
                 return Result.failure("Failed to migrate legacy features: " + error.getLocalizedMessage());
@@ -293,5 +290,17 @@ public class OSQAConfig {
     public static Result<Void> deleteVerification(OSQATestSpec testSpec,OSQATestCase parentTestCase, OSQAVerification verification) {
         testSpec.verifications().removeIf(e -> e.uuid().equalsIgnoreCase(verification.uuid()));
         return overwriteSpecFile(testSpec,parentTestCase);
+    }
+    public static Result<Void> overwriteFeature(OSQAFeature feature, OSQATestSpec updatedTestSpec, OSQATestCase parentTestCase) {
+        try {
+            var path = Paths.get(feature.filePath());
+            var rawFeature = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(feature);
+            Files.writeString(path,rawFeature,StandardOpenOption.CREATE,StandardOpenOption.TRUNCATE_EXISTING);
+            if (Files.exists(path)) {
+                return overwriteSpecFile(updatedTestSpec,parentTestCase);
+            } else return Result.failure("Failed to overwrite features conf file: Error unknown");
+        } catch (IOException ex){
+            return Result.failure("Failed to write features spec file:" +ex.getLocalizedMessage());
+        }
     }
 }
