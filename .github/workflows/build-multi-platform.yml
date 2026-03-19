@@ -3,6 +3,7 @@ name: Multi-Platform Binary Generation
 on:
   push:
     branches: [ "master", "main" ]
+    tags: [ "V*" ]
   pull_request:
     branches: [ "master", "main" ]
   release:
@@ -74,7 +75,12 @@ jobs:
       id: version
       run: |
         if [[ "${{ github.event_name }}" == "release" ]]; then
+          # Handle release tags like "V1.3" - extract version number after 'V'
           VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#V}"
+        elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#V}"
         else
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           VERSION="${VERSION}-SNAPSHOT"
