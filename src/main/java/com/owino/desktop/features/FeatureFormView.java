@@ -303,7 +303,9 @@ public class FeatureFormView extends ScrollPane {
             successAlert.setContentText("Feature updated successfully!");
             if (successAlert.showAndWait().isPresent()){
                 successAlert.close();
-                EventBus.getDefault().post(new OSQANavigationEvents.OpenDashboardEvent());
+                EventBus.getDefault().post(
+    new OSQANavigationEvents.OpenFeaturesListViewEvent(selectedProduct)
+);
             }
         } else {
             var errorAlert = new Alert(Alert.AlertType.ERROR);
@@ -346,7 +348,9 @@ public class FeatureFormView extends ScrollPane {
             successAlert.setContentText("Feature created successfully!");
             if (successAlert.showAndWait().isPresent()){
                 successAlert.close();
-                EventBus.getDefault().post(new OSQANavigationEvents.OpenDashboardEvent());
+                EventBus.getDefault().post(
+    new OSQANavigationEvents.OpenFeaturesListViewEvent(selectedProduct)
+);
             }
         } else {
             var errorAlert = new Alert(Alert.AlertType.ERROR);
